@@ -30,39 +30,76 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            padding: 18px 32px;
+            margin-bottom: 28px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-radius: 20px;
         }
 
-        .brand a {
-            text-decoration: none;
-            color: inherit;
-            font-weight: 800;
+        .brand {
             font-size: 20px;
+            font-weight: 800;
+            text-decoration: none;
+            color: #162033;
+            letter-spacing: -0.3px;
         }
 
-        .user-info {
+        .nav-right {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 14px;
+            flex-wrap: wrap;
         }
 
-        .welcome-text {
-            font-size: 15px;
-            color: #162033;
+        .welcome {
+            font-size: 14px;
+            color: #4a5568;
         }
 
-        .welcome-text strong {
+        .welcome strong {
             background: #eef2ff;
             padding: 4px 10px;
             border-radius: 10px;
         }
 
-        .logout {
-            background: #355cff;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 20px;
+        .nav-btn {
+            padding: 9px 18px;
+            border-radius: 999px;
             text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #162033;
+            box-shadow: 0 8px 20px rgba(34, 50, 84, 0.06);
+        }
+
+        .map-btn:hover {
+            background: #f6f8ff;
+            transform: translateY(-1px);
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #355cff, #5a78ff);
+            color: white;
+            box-shadow: 0 12px 24px rgba(53, 92, 255, 0.22);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 28px rgba(53, 92, 255, 0.28);
         }
 
         .card {
@@ -147,18 +184,6 @@
             margin-top: 6px;
         }
 
-        @media (max-width: 900px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .navbar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-        }
-
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -195,24 +220,82 @@
             font-weight: 600;
             font-size: 12px;
         }
+
+        .time-panel {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .time-box {
+            min-width: 220px;
+            background: #f8faff;
+            border: 1px solid #e6ebf5;
+            border-radius: 18px;
+            padding: 14px 18px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+        }
+
+        .active-box {
+            background: linear-gradient(135deg, #eef2ff, #f8faff);
+            border-color: #dbe4ff;
+        }
+
+        .time-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5f6b85;
+            margin-bottom: 6px;
+        }
+
+        .time-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #162033;
+            letter-spacing: -0.03em;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <nav class="navbar">
+            <a href="{% url 'index' %}" class="brand">CityU FlexiLock</a>
 
-        <div class="navbar">
-            <div class="brand">
-                <a href="{% url 'index' %}">CityU FlexiLock</a>
-            </div>
-
-            <div class="user-info">
-                <span class="welcome-text">
+            <div class="nav-right">
+                <span class="welcome">
                     Welcome, <strong>{{ request.user.username }}</strong>
+                    {% if request.user.is_staff %}
+                    <span
+                        style="background:#355cff;color:white;padding:3px 8px;border-radius:8px;font-size:11px;margin-left:6px;">
+                        ADMIN
+                    </span>
+                    {% endif %}
                 </span>
-                <a href="{% url 'logout' %}" class="logout">Logout</a>
+                <a href="{% url 'campus_map' %}" class="nav-btn map-btn">Campus Map 🗺️</a>
+                <a href="{% url 'my_reservations' %}" class="nav-btn map-btn">My Reservations</a>
+                <a href="{% url 'reservation_timeline' %}" class="nav-btn map-btn">Timeline</a>
+                {% if request.user.is_staff %}
+                <a href="{% url 'admin_lockers' %}" class="nav-btn map-btn">Admin Controls</a>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="nav-btn logout-btn">Logout</a>
             </div>
-        </div>
+        </nav>
 
         {% if messages %}
         {% for message in messages %}
@@ -224,15 +307,49 @@
             <h2>Locker Overview</h2>
             <p>Reserve and manage lockers across the campus.</p>
 
+            <div class="time-panel">
+                <div class="time-box">
+                    <span class="time-label">Current Time</span>
+                    <span id="current-time" class="time-value">--:--:--</span>
+                </div>
+
+                {% if user_reservation %}
+                <div class="time-box active-box">
+                    <span class="time-label">Time Remaining</span>
+                    <span id="countdown-timer" class="time-value" data-mode="active"
+                        data-end="{{ user_reservation.end_time|date:'c' }}">--:--:--</span>
+                </div>
+                {% elif upcoming_reservations %}
+                <div class="time-box active-box">
+                    <span class="time-label">Next Reservation Starts In</span>
+                    <span id="countdown-timer" class="time-value" data-mode="upcoming"
+                        data-start="{{ upcoming_reservations.0.start_time|date:'c' }}">--:--:--</span>
+                </div>
+                {% endif %}
+            </div>
+
             {% if user_reservation %}
-            <div class="meta" style="margin-top: 12px;">
+            <div class="meta" style="margin-top: 14px;">
                 Your current locker: <strong>{{ user_reservation.locker.locker_number }}</strong>
                 ({{ user_reservation.locker.location }})
             </div>
-            <a href="{% url 'cancel_reservation' user_reservation.id %}" class="cancel-btn">Cancel Reservation</a>
+            <div class="meta">
+                Ends at {{ user_reservation.end_time|date:"Y-m-d H:i" }}
+            </div>
+
+            {% elif upcoming_reservations %}
+            <div class="meta" style="margin-top: 14px;">
+                Your next reservation:
+                <strong>{{ upcoming_reservations.0.locker.locker_number }}</strong>
+                ({{ upcoming_reservations.0.locker.location }})
+            </div>
+            <div class="meta">
+                Starts at {{ upcoming_reservations.0.start_time|date:"Y-m-d H:i" }}
+            </div>
+
             {% else %}
-            <div class="meta" style="margin-top: 12px;">
-                You currently have no active reservation.
+            <div class="meta" style="margin-top: 14px;">
+                You currently have no reservation.
             </div>
             {% endif %}
         </div>
@@ -257,8 +374,7 @@
             {% endfor %}
         </div>
 
-        <br />
-        <div class="card">
+        <div class="card" style="margin-top: 24px;">
             <h2>Reservation History</h2>
 
             <table class="history-table">
@@ -278,7 +394,6 @@
                         <td>{{ reservation.locker.locker_number }}</td>
                         <td>{{ reservation.locker.location }}</td>
                         <td>{{ reservation.start_time|date:"Y-m-d H:i" }}</td>
-
                         <td>
                             {% if reservation.end_time %}
                             {{ reservation.end_time|date:"Y-m-d H:i" }}
@@ -286,7 +401,6 @@
                             -
                             {% endif %}
                         </td>
-
                         <td>
                             {% if reservation.active %}
                             <span class="status-active">Active</span>
@@ -303,8 +417,106 @@
                 </tbody>
             </table>
         </div>
-
     </div>
+
+    <script>
+        let hasRefreshed = false;
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const currentTimeEl = document.getElementById('current-time');
+            if (currentTimeEl) {
+                currentTimeEl.textContent = now.toLocaleString();
+            }
+        }
+
+        function updateCountdown() {
+            const countdownEl = document.getElementById('countdown-timer');
+            if (!countdownEl) return;
+
+            const mode = countdownEl.dataset.mode;
+            const now = new Date();
+
+            if (mode === 'upcoming') {
+                const startTimeStr = countdownEl.dataset.start;
+                if (!startTimeStr) return;
+
+                const startTime = new Date(startTimeStr);
+                const diff = startTime - now;
+
+                if (diff <= 0) {
+                    countdownEl.textContent = "Starting...";
+                    countdownEl.style.color = "#355cff";
+
+                    if (!hasRefreshed) {
+                        hasRefreshed = true;
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    }
+                    return;
+                }
+
+                countdownEl.style.color = "#355cff";
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+
+                countdownEl.textContent =
+                    "Starts in " +
+                    String(minutes).padStart(2, '0') + ":" +
+                    String(seconds).padStart(2, '0');
+
+                return;
+            }
+
+            if (mode === 'active') {
+                const endTimeStr = countdownEl.dataset.end;
+                if (!endTimeStr) return;
+
+                const endTime = new Date(endTimeStr);
+                const diff = endTime - now;
+
+                if (diff <= 0) {
+                    countdownEl.textContent = "Expired";
+                    countdownEl.style.color = "#dc2626";
+
+                    if (!hasRefreshed) {
+                        hasRefreshed = true;
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200);
+                    }
+                    return;
+                }
+
+                if (diff <= 10 * 60 * 1000) {
+                    countdownEl.style.color = "#d97706";
+                } else {
+                    countdownEl.style.color = "#162033";
+                }
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                countdownEl.textContent =
+                    String(hours).padStart(2, '0') + ":" +
+                    String(minutes).padStart(2, '0') + ":" +
+                    String(seconds).padStart(2, '0');
+            }
+        }
+
+        updateCurrentTime();
+        updateCountdown();
+
+        setInterval(() => {
+            updateCurrentTime();
+            updateCountdown();
+        }, 1000);
+    </script>
 </body>
 
 </html>

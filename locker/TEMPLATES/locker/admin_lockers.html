@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Locker Controls | FlexiLock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+                linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+            margin: 0;
+            color: #162033;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 36px 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: inherit;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #d9dfeb;
+            background: white;
+            color: #162033;
+        }
+
+        .btn-primary {
+            background: #355cff;
+            border-color: #355cff;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            margin-bottom: 22px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: #eef2ff;
+            color: #2446d8;
+        }
+
+        .locker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .locker-card {
+            border: 1px solid #e6ebf5;
+            border-radius: 18px;
+            padding: 18px;
+            background: #fff;
+        }
+
+        .locker-card h3 {
+            margin: 0 0 6px 0;
+        }
+
+        .muted {
+            color: #5f6b85;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .available { background: #e9fff3; color: #12844d; }
+        .occupied { background: #fff3e0; color: #b76a00; }
+        .maintenance { background: #fff0f1; color: #bc3145; }
+        .disabled { background: #f1f5f9; color: #475569; }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .small-btn {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .maintenance-btn { background: #fff0f1; color: #bc3145; }
+        .reopen-btn { background: #e9fff3; color: #12844d; }
+        .disable-btn { background: #f1f5f9; color: #475569; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #eef2ff;
+        }
+
+        th {
+            color: #5f6b85;
+        }
+
+        @media (max-width: 900px) {
+            .locker-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div class="brand">
+                <a href="{% url 'index' %}">CityU FlexiLock</a>
+            </div>
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn">Dashboard</a>
+                <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <h1>Admin Locker Controls</h1>
+            <p class="muted">Manage maintenance, disabled lockers, and monitor recent locker activity.</p>
+        </div>
+
+        <div class="card">
+            <h2>Locker Management</h2>
+
+            <div class="locker-grid">
+                {% for locker in lockers %}
+                    <div class="locker-card">
+                        <h3>{{ locker.locker_number }}</h3>
+                        <div class="muted">{{ locker.location }}</div>
+
+                        <span class="status {{ locker.status }}">
+                            {{ locker.status|title }}
+                        </span>
+
+                        <div class="actions">
+                            <a href="{% url 'set_locker_maintenance' locker.id %}" class="small-btn maintenance-btn">
+                                Set Maintenance
+                            </a>
+                            <a href="{% url 'reopen_locker' locker.id %}" class="small-btn reopen-btn">
+                                Reopen
+                            </a>
+                            <a href="{% url 'disable_locker' locker.id %}" class="small-btn disable-btn">
+                                Disable
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Logs</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User</th>
+                        <th>Locker</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                            <td>{% if log.user %}{{ log.user.username }}{% else %}-{% endif %}</td>
+                            <td>{% if log.locker %}{{ log.locker.locker_number }}{% else %}-{% endif %}</td>
+                            <td>{{ log.action|title }}</td>
+                            <td>{{ log.details }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">No logs found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

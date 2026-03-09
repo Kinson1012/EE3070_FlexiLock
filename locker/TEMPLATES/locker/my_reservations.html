@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reservations | FlexiLock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+                linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+            margin: 0;
+            color: #162033;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 40px 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: inherit;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #355cff;
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #162033;
+            border: 1px solid #d9dfeb;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        .card h1, .card h2 {
+            margin-top: 0;
+        }
+
+        .meta {
+            color: #5f6b85;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #e9fff3;
+            color: #12844d;
+        }
+
+        .status-completed {
+            background: #eef2ff;
+            color: #355cff;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 2px solid #eef2ff;
+            color: #5f6b85;
+        }
+
+        .history-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f1f3f8;
+            vertical-align: middle;
+        }
+
+        .small-btn {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .qr-btn {
+            background: #355cff;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #fff0f1;
+            color: #bc3145;
+        }
+
+        .empty {
+            color: #5f6b85;
+        }
+
+        @media (max-width: 900px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .history-table,
+            .history-table thead,
+            .history-table tbody,
+            .history-table th,
+            .history-table td,
+            .history-table tr {
+                display: block;
+                width: 100%;
+            }
+
+            .history-table thead {
+                display: none;
+            }
+
+            .history-table tr {
+                margin-bottom: 16px;
+                border: 1px solid #eef2ff;
+                border-radius: 16px;
+                padding: 10px;
+                background: #fff;
+            }
+
+            .history-table td {
+                border: none;
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="topbar">
+            <div class="brand">
+                <a href="{% url 'index' %}">CityU FlexiLock</a>
+            </div>
+
+            <div class="actions">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline">Dashboard</a>
+                <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h1>My Reservations</h1>
+            <p class="meta">View your current booking, QR code access, and past reservation history.</p>
+        </div>
+
+        <div class="card">
+            <h2>Active Reservation</h2>
+
+            {% if active_reservation %}
+                <p class="meta"><strong>Locker:</strong> {{ active_reservation.locker.locker_number }}</p>
+                <p class="meta"><strong>Location:</strong> {{ active_reservation.locker.location }}</p>
+                <p class="meta"><strong>Start:</strong> {{ active_reservation.start_time|date:"Y-m-d H:i" }}</p>
+                <p class="meta"><strong>End:</strong> {{ active_reservation.end_time|date:"Y-m-d H:i" }}</p>
+                <p>
+                    <span class="status-badge status-active">Active</span>
+                </p>
+
+                <div style="margin-top: 16px;">
+                    <a href="{% url 'reservation_detail' active_reservation.id %}" class="small-btn qr-btn">View QR Code</a>
+                    <a href="{% url 'cancel_reservation' active_reservation.id %}" class="small-btn cancel-btn">Cancel Reservation</a>
+                </div>
+            {% else %}
+                <p class="empty">You do not have any active reservation.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Reservation History</h2>
+
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Locker</th>
+                        <th>Location</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for reservation in reservation_history %}
+                        <tr>
+                            <td>{{ reservation.locker.locker_number }}</td>
+                            <td>{{ reservation.locker.location }}</td>
+                            <td>{{ reservation.start_time|date:"Y-m-d H:i" }}</td>
+                            <td>{{ reservation.end_time|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if reservation.active %}
+                                    <span class="status-badge status-active">Active</span>
+                                {% else %}
+                                    <span class="status-badge status-completed">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'reservation_detail' reservation.id %}" class="small-btn qr-btn">Details</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No reservation history found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

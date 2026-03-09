@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Timeline | FlexiLock</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+                linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+            margin: 0;
+            color: #162033;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 36px 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: inherit;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #d9dfeb;
+            background: white;
+            color: #162033;
+        }
+
+        .btn-primary {
+            background: #355cff;
+            border-color: #355cff;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            margin-bottom: 22px;
+        }
+
+        .card h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .muted {
+            color: #5f6b85;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #d9dfeb;
+            font-size: 14px;
+            min-width: 220px;
+            background: white;
+        }
+
+        #calendar {
+            margin-top: 10px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #5f6b85;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+        }
+
+        .dot-current {
+            background: #f59e0b;
+        }
+
+        .dot-upcoming {
+            background: #4f46e5;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .fc .fc-button {
+            background: #355cff;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+        }
+
+        .fc .fc-button:hover {
+            background: #2446d8;
+        }
+
+        .fc-event {
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 3px 6px !important;
+            font-size: 12px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="topbar">
+            <div class="brand">
+                <a href="{% url 'index' %}">CityU FlexiLock</a>
+            </div>
+
+            <div class="actions">
+                <a href="{% url 'dashboard' %}" class="btn">Dashboard</a>
+                <a href="{% url 'campus_map' %}" class="btn">Campus Map</a>
+                <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h1>Reservation Timeline</h1>
+            <p class="muted">View locker bookings by time and building.</p>
+
+            <div class="filter-row" style="margin-top: 18px;">
+                <label for="locationFilter"><strong>Building:</strong></label>
+                <select id="locationFilter">
+                    <option value="">All Buildings</option>
+                    {% for building in buildings %}
+                        <option value="{{ building }}" {% if building == selected_location %}selected{% endif %}>
+                            {{ building }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-dot dot-current"></span>
+                    <span>Current reservation</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot dot-upcoming"></span>
+                    <span>Upcoming reservation</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <script>
+        const locationFilter = document.getElementById('locationFilter');
+        const initialLocation = locationFilter.value;
+
+        function buildEventsUrl() {
+            const location = locationFilter.value;
+            let url = "{% url 'timeline_events' %}";
+            if (location) {
+                url += `?location=${encodeURIComponent(location)}`;
+            }
+            return url;
+        }
+
+        const calendarEl = document.getElementById('calendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridDay',
+            height: 'auto',
+            slotMinTime: '07:00:00',
+            slotMaxTime: '23:00:00',
+            nowIndicator: true,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'timeGridDay,timeGridWeek,dayGridMonth'
+            },
+            events: buildEventsUrl(),
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                alert(
+                    `Locker: ${props.locker}\n` +
+                    `Building: ${props.location}\n` +
+                    `User: ${props.user}\n` +
+                    `Start: ${info.event.start}\n` +
+                    `End: ${info.event.end}`
+                );
+            }
+        });
+
+        calendar.render();
+
+        locationFilter.addEventListener('change', function() {
+            const selected = this.value;
+            const pageUrl = new URL(window.location.href);
+
+            if (selected) {
+                pageUrl.searchParams.set('location', selected);
+            } else {
+                pageUrl.searchParams.delete('location');
+            }
+
+            window.history.replaceState({}, '', pageUrl);
+
+            calendar.removeAllEventSources();
+            calendar.addEventSource(buildEventsUrl());
+        });
+    </script>
+</body>
+</html>

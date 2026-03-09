@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +12,8 @@
         body {
             font-family: 'Inter', sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
-                radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+                radial-gradient(circle at top left, rgba(53, 92, 255, 0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(57, 196, 172, 0.12), transparent 22%),
                 linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
             margin: 0;
             color: #162033;
@@ -28,7 +29,7 @@
             background: white;
             padding: 30px;
             border-radius: 24px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
         }
 
         h1 {
@@ -46,7 +47,8 @@
             margin: 18px 0 8px;
         }
 
-        input, select {
+        input,
+        select {
             width: 100%;
             padding: 12px 14px;
             border-radius: 12px;
@@ -90,6 +92,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="card">
@@ -97,9 +100,9 @@
             <p>{{ locker.location }}</p>
 
             {% if messages %}
-                {% for message in messages %}
-                    <div class="message">{{ message }}</div>
-                {% endfor %}
+            {% for message in messages %}
+            <div class="message">{{ message }}</div>
+            {% endfor %}
             {% endif %}
 
             <form method="POST">
@@ -108,16 +111,20 @@
                 <label for="start_time">Start Time</label>
                 <input type="datetime-local" id="start_time" name="start_time" required>
 
-                <label for="duration_hours">Duration</label>
-                <select id="duration_hours" name="duration_hours" required>
+                <label for="duration_seconds">Duration</label>
+                <select id="duration_seconds" name="duration_seconds" required>
                     <option value="">Select duration</option>
-                    <option value="1">1 hour</option>
-                    <option value="2">2 hours</option>
-                    <option value="4">4 hours</option>
-                    <option value="8">8 hours</option>
-                    <option value="24">24 hours</option>
-                    <option value="72">3 days</option>
-                    <option value="168">1 week</option>
+
+                    <option value="10">10 seconds (Demo)</option>
+                    <option value="15">15 seconds (Demo)</option>
+                    <option value="30">30 seconds (Demo)</option>
+                    <option value="60">1 minute</option>
+                    <option value="300">5 minutes</option>
+
+                    <option value="3600">1 hour</option>
+                    <option value="7200">2 hours</option>
+                    <option value="14400">4 hours</option>
+                    <option value="86400">1 day</option>
                 </select>
 
                 <div class="btn-row">
@@ -128,4 +135,5 @@
         </div>
     </div>
 </body>
+
 </html>

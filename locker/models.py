@@ -6,9 +6,10 @@ from django.contrib.auth.models import User
 
 class Locker(models.Model):
     STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('occupied', 'Occupied'),
-        ('maintenance', 'Maintenance'),
+    ('available', 'Available'),
+    ('occupied', 'Occupied'),
+    ('maintenance', 'Maintenance'),
+    ('disabled', 'Disabled'),
     ]
 
     locker_number = models.CharField(max_length=20, unique=True)
@@ -31,11 +32,26 @@ class Reservation(models.Model):
         state = "Active" if self.active else "Closed"
         return f"{self.user.username} -> {self.locker.locker_number} ({state})"
 
+    @property
+    def is_current(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.active and self.start_time <= now <= self.end_time
+
+    @property
+    def is_upcoming(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.active and self.start_time > now
+
 
 class ReservationLog(models.Model):
     ACTION_CHOICES = [
-        ('reserve', 'Reserve'),
-        ('cancel', 'Cancel'),
+    ('reserve', 'Reserve'),
+    ('cancel', 'Cancel'),
+    ('maintenance', 'Maintenance'),
+    ('reopen', 'Reopen'),
+    ('disable', 'Disable'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

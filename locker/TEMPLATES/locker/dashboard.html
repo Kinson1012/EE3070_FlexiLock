@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | FlexiLock</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Inter',sans-serif;
+background:
+radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
+radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+margin:0;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:40px;
+}
+
+.navbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:40px;
+}
+
+.brand a {
+    text-decoration: none;
+    color: inherit;
+    font-size:40px;
+    font-weight: 800;
+}
+
+.logout{
+background:#355cff;
+color:white;
+padding:10px 18px;
+border-radius:20px;
+text-decoration:none;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:20px;
+box-shadow:0 15px 40px rgba(0,0,0,0.08);
+margin-bottom:25px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+}
+
+.locker{
+background:white;
+padding:20px;
+border-radius:16px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+.locker h3{
+margin:0 0 8px 0;
+}
+
+.status{
+font-size:13px;
+padding:5px 10px;
+border-radius:12px;
+display:inline-block;
+margin-top:5px;
+}
+
+.available{
+background:#e9fff3;
+color:#12844d;
+}
+
+.occupied{
+background:#fff3e0;
+color:#b76a00;
+}
+
+.reserve-btn{
+margin-top:10px;
+display:inline-block;
+padding:8px 14px;
+background:#355cff;
+color:white;
+border-radius:15px;
+text-decoration:none;
+font-size:14px;
+}
+
+.user-info{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.welcome-text{
+    font-family:'Inter', sans-serif;
+    font-size:19px;
+    color:#162033;
+}
+
+.welcome-text strong{
+    font-weight:600;
+}
+
+.welcome-text strong{
+    background:#eef2ff;
+    padding:4px 10px;
+    border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="navbar">
+<div class="brand">
+    <a href="{% url 'index' %}">CityU FlexiLock</a>
+</div>
+<div class="user-info">
+    <span class="welcome-text">
+        <strong>Welcome, {{ request.user.username }}!</strong>
+    </span>
+    <a href="{% url 'logout' %}" class="logout">Logout</a>
+</div>
+</div>
+
+<div class="card">
+<h2>Locker Overview</h2>
+<p>Reserve and manage lockers across the campus.</p>
+</div>
+
+<div class="grid">
+
+<div class="locker">
+<h3>Locker A-12</h3>
+<span class="status available">Available</span>
+<br>
+<a href="#" class="reserve-btn">Reserve</a>
+</div>
+
+<div class="locker">
+<h3>Locker B-07</h3>
+<span class="status occupied">Occupied</span>
+</div>
+
+<div class="locker">
+<h3>Locker C-21</h3>
+<span class="status available">Available</span>
+<br>
+<a href="#" class="reserve-btn">Reserve</a>
+</div>
+
+<div class="locker">
+<h3>Locker D-03</h3>
+<span class="status occupied">Occupied</span>
+</div>
+
+<div class="locker">
+<h3>Locker E-09</h3>
+<span class="status available">Available</span>
+<br>
+<a href="#" class="reserve-btn">Reserve</a>
+</div>
+
+<div class="locker">
+<h3>Locker F-15</h3>
+<span class="status available">Available</span>
+<br>
+<a href="#" class="reserve-btn">Reserve</a>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>

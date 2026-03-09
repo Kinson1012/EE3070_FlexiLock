@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | CityU FlexLocker</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root {
+--text:#162033;
+--muted:#5f6b85;
+--primary:#355cff;
+--surface:rgba(255,255,255,0.82);
+--shadow:0 18px 45px rgba(34,50,84,0.12);
+--radius-xl:28px;
+}
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+font-family:'Inter',sans-serif;
+background:
+radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
+radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
+linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.login-card{
+background:var(--surface);
+padding:2.5rem;
+border-radius:var(--radius-xl);
+box-shadow:var(--shadow);
+width:360px;
+text-align:center;
+}
+
+h1{
+margin-bottom:1.5rem;
+font-size:1.8rem;
+}
+
+input{
+width:100%;
+padding:0.9rem;
+margin-bottom:1rem;
+border-radius:12px;
+border:1px solid #ddd;
+font-size:0.95rem;
+}
+
+button{
+width:100%;
+padding:0.9rem;
+border:none;
+border-radius:999px;
+background:linear-gradient(135deg,#355cff,#5a78ff);
+color:white;
+font-weight:600;
+cursor:pointer;
+transition:0.2s;
+}
+
+button:hover{
+transform:translateY(-1px);
+}
+
+p{
+margin-top:1rem;
+color:var(--muted);
+font-size:0.9rem;
+}
+
+a{
+color:#355cff;
+text-decoration:none;
+font-weight:600;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+<h1>FlexLocker Login</h1>
+
+{% if messages %}
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}
+{% endif %}
+
+<form method="POST">
+{% csrf_token %}
+
+<input type="text" name="username" placeholder="Username" required>
+
+<input type="password" name="password" placeholder="Password" required>
+
+<button type="submit">Login</button>
+
+</form>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="margin-bottom: 1rem; color: #c0392b; font-size: 0.92rem;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<p>No account? <a href="{% url 'register' %}">Register</a></p>
+
+</div>
+
+</body>
+</html>

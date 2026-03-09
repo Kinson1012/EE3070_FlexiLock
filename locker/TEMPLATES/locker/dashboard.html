@@ -1,197 +1,310 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard | FlexiLock</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FlexiLock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(53, 92, 255, 0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(57, 196, 172, 0.12), transparent 22%),
+                linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+            margin: 0;
+            color: #162033;
+        }
 
-<style>
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 40px;
+        }
 
-body{
-font-family:'Inter',sans-serif;
-background:
-radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
-radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
-linear-gradient(180deg,#f8faff 0%,#f4f6fb 100%);
-margin:0;
-}
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
 
-.container{
-max-width:1100px;
-margin:auto;
-padding:40px;
-}
+        .brand a {
+            text-decoration: none;
+            color: inherit;
+            font-weight: 800;
+            font-size: 20px;
+        }
 
-.navbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:40px;
-}
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-.brand a {
-    text-decoration: none;
-    color: inherit;
-    font-size:40px;
-    font-weight: 800;
-}
+        .welcome-text {
+            font-size: 15px;
+            color: #162033;
+        }
 
-.logout{
-background:#355cff;
-color:white;
-padding:10px 18px;
-border-radius:20px;
-text-decoration:none;
-}
+        .welcome-text strong {
+            background: #eef2ff;
+            padding: 4px 10px;
+            border-radius: 10px;
+        }
 
-.card{
-background:white;
-padding:25px;
-border-radius:20px;
-box-shadow:0 15px 40px rgba(0,0,0,0.08);
-margin-bottom:25px;
-}
+        .logout {
+            background: #355cff;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 20px;
+            text-decoration: none;
+        }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:20px;
-}
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
 
-.locker{
-background:white;
-padding:20px;
-border-radius:16px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-}
+        .message {
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: #eef2ff;
+            color: #2446d8;
+        }
 
-.locker h3{
-margin:0 0 8px 0;
-}
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
 
-.status{
-font-size:13px;
-padding:5px 10px;
-border-radius:12px;
-display:inline-block;
-margin-top:5px;
-}
+        .locker {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
 
-.available{
-background:#e9fff3;
-color:#12844d;
-}
+        .locker h3 {
+            margin: 0 0 8px 0;
+        }
 
-.occupied{
-background:#fff3e0;
-color:#b76a00;
-}
+        .status {
+            font-size: 13px;
+            padding: 5px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: 600;
+        }
 
-.reserve-btn{
-margin-top:10px;
-display:inline-block;
-padding:8px 14px;
-background:#355cff;
-color:white;
-border-radius:15px;
-text-decoration:none;
-font-size:14px;
-}
+        .available {
+            background: #e9fff3;
+            color: #12844d;
+        }
 
-.user-info{
-    display:flex;
-    align-items:center;
-    gap:15px;
-}
+        .occupied {
+            background: #fff3e0;
+            color: #b76a00;
+        }
 
-.welcome-text{
-    font-family:'Inter', sans-serif;
-    font-size:19px;
-    color:#162033;
-}
+        .maintenance {
+            background: #fff0f1;
+            color: #bc3145;
+        }
 
-.welcome-text strong{
-    font-weight:600;
-}
+        .reserve-btn,
+        .cancel-btn {
+            margin-top: 12px;
+            display: inline-block;
+            padding: 8px 14px;
+            color: white;
+            border-radius: 15px;
+            text-decoration: none;
+            font-size: 14px;
+        }
 
-.welcome-text strong{
-    background:#eef2ff;
-    padding:4px 10px;
-    border-radius:10px;
-}
+        .reserve-btn {
+            background: #355cff;
+        }
 
-</style>
+        .cancel-btn {
+            background: #d9534f;
+        }
+
+        .meta {
+            color: #5f6b85;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #eef2ff;
+            color: #5f6b85;
+        }
+
+        .history-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f1f3f8;
+        }
+
+        .status-active {
+            background: #e9fff3;
+            color: #12844d;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .status-closed {
+            background: #eef2ff;
+            color: #355cff;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+    </style>
 </head>
 
 <body>
+    <div class="container">
 
-<div class="container">
+        <div class="navbar">
+            <div class="brand">
+                <a href="{% url 'index' %}">CityU FlexiLock</a>
+            </div>
 
-<div class="navbar">
-<div class="brand">
-    <a href="{% url 'index' %}">CityU FlexiLock</a>
-</div>
-<div class="user-info">
-    <span class="welcome-text">
-        <strong>Welcome, {{ request.user.username }}!</strong>
-    </span>
-    <a href="{% url 'logout' %}" class="logout">Logout</a>
-</div>
-</div>
+            <div class="user-info">
+                <span class="welcome-text">
+                    Welcome, <strong>{{ request.user.username }}</strong>
+                </span>
+                <a href="{% url 'logout' %}" class="logout">Logout</a>
+            </div>
+        </div>
 
-<div class="card">
-<h2>Locker Overview</h2>
-<p>Reserve and manage lockers across the campus.</p>
-</div>
+        {% if messages %}
+        {% for message in messages %}
+        <div class="message">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
 
-<div class="grid">
+        <div class="card">
+            <h2>Locker Overview</h2>
+            <p>Reserve and manage lockers across the campus.</p>
 
-<div class="locker">
-<h3>Locker A-12</h3>
-<span class="status available">Available</span>
-<br>
-<a href="#" class="reserve-btn">Reserve</a>
-</div>
+            {% if user_reservation %}
+            <div class="meta" style="margin-top: 12px;">
+                Your current locker: <strong>{{ user_reservation.locker.locker_number }}</strong>
+                ({{ user_reservation.locker.location }})
+            </div>
+            <a href="{% url 'cancel_reservation' user_reservation.id %}" class="cancel-btn">Cancel Reservation</a>
+            {% else %}
+            <div class="meta" style="margin-top: 12px;">
+                You currently have no active reservation.
+            </div>
+            {% endif %}
+        </div>
 
-<div class="locker">
-<h3>Locker B-07</h3>
-<span class="status occupied">Occupied</span>
-</div>
+        <div class="grid">
+            {% for locker in lockers %}
+            <div class="locker">
+                <h3>{{ locker.locker_number }}</h3>
+                <div class="meta">{{ locker.location }}</div>
 
-<div class="locker">
-<h3>Locker C-21</h3>
-<span class="status available">Available</span>
-<br>
-<a href="#" class="reserve-btn">Reserve</a>
-</div>
+                <span class="status {{ locker.status }}">
+                    {{ locker.status|title }}
+                </span>
 
-<div class="locker">
-<h3>Locker D-03</h3>
-<span class="status occupied">Occupied</span>
-</div>
+                {% if locker.status == 'available' and not user_reservation %}
+                <br>
+                <a href="{% url 'reserve_locker' locker.id %}" class="reserve-btn">Reserve</a>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p>No lockers found.</p>
+            {% endfor %}
+        </div>
 
-<div class="locker">
-<h3>Locker E-09</h3>
-<span class="status available">Available</span>
-<br>
-<a href="#" class="reserve-btn">Reserve</a>
-</div>
+        <br />
+        <div class="card">
+            <h2>Reservation History</h2>
 
-<div class="locker">
-<h3>Locker F-15</h3>
-<span class="status available">Available</span>
-<br>
-<a href="#" class="reserve-btn">Reserve</a>
-</div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Locker</th>
+                        <th>Location</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
 
-</div>
+                <tbody>
+                    {% for reservation in reservation_history %}
+                    <tr>
+                        <td>{{ reservation.locker.locker_number }}</td>
+                        <td>{{ reservation.locker.location }}</td>
+                        <td>{{ reservation.start_time|date:"Y-m-d H:i" }}</td>
 
-</div>
+                        <td>
+                            {% if reservation.end_time %}
+                            {{ reservation.end_time|date:"Y-m-d H:i" }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
 
+                        <td>
+                            {% if reservation.active %}
+                            <span class="status-active">Active</span>
+                            {% else %}
+                            <span class="status-closed">Completed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No reservation history.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
 </body>
+
 </html>

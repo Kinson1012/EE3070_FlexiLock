@@ -16,6 +16,6 @@ logs/
 # VSCode
 .vscode/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db

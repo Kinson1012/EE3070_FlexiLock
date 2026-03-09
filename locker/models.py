@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -20,9 +22,10 @@ class Locker(models.Model):
 class Reservation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     locker = models.ForeignKey(Locker, on_delete=models.CASCADE)
-    start_time = models.DateTimeField(auto_now_add=True)
-    end_time = models.DateTimeField(null=True, blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
     active = models.BooleanField(default=True)
+    qr_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def __str__(self):
         state = "Active" if self.active else "Closed"

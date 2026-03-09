@@ -1,4 +1,8 @@
 from pathlib import Path
+from io import BytesIO
+from datetime import timedelta
+
+import qrcode
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -7,6 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
+from django.http import HttpResponse
 
 from .models import Locker, Reservation, ReservationLog
 
@@ -98,6 +103,20 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard(request):
+    # auto-close expired reservations
+    expired_reservations = Reservation.objects.filter(
+        active=True,
+        end_time__lt=timezone.now()
+    )
+
+    for reservation in expired_reservations:
+        reservation.active = False
+        reservation.save()
+
+        locker = reservation.locker
+        locker.status = 'available'
+        locker.save()
+
     lockers = Locker.objects.all().order_by('locker_number')
     user_reservation = Reservation.objects.filter(user=request.user, active=True).first()
     reservation_history = Reservation.objects.filter(user=request.user).order_by('-start_time')
@@ -132,31 +151,99 @@ def reserve_locker(request, locker_id):
         messages.error(request, "This locker is not available.")
         return redirect("dashboard")
 
-    reservation = Reservation.objects.create(
-        user=request.user,
-        locker=locker,
-        active=True
+    if request.method == "POST":
+        start_time_str = request.POST.get("start_time")
+        duration_hours = request.POST.get("duration_hours")
+
+        if not start_time_str or not duration_hours:
+            messages.error(request, "Please fill in all reservation details.")
+            return redirect("reserve_locker", locker_id=locker.id)
+
+        try:
+            naive_start = timezone.datetime.fromisoformat(start_time_str)
+            start_time = timezone.make_aware(naive_start, timezone.get_current_timezone())
+            duration_hours = int(duration_hours)
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid date or duration.")
+            return redirect("reserve_locker", locker_id=locker.id)
+
+        if start_time < timezone.now():
+            messages.error(request, "Start time cannot be in the past.")
+            return redirect("reserve_locker", locker_id=locker.id)
+
+        end_time = start_time + timedelta(hours=duration_hours)
+
+        reservation = Reservation.objects.create(
+            user=request.user,
+            locker=locker,
+            start_time=start_time,
+            end_time=end_time,
+            active=True
+        )
+
+        locker.status = 'occupied'
+        locker.save()
+
+        ReservationLog.objects.create(
+            user=request.user,
+            locker=locker,
+            action='reserve',
+            details=(
+                f"Reservation ID {reservation.id} created. "
+                f"Start: {start_time}, End: {end_time}, QR Token: {reservation.qr_token}"
+            )
+        )
+
+        write_reservation_log(
+            user=request.user,
+            locker=locker,
+            action="reserve",
+            extra_message=(
+                f"reservation_id={reservation.id} "
+                f"start={start_time} end={end_time} qr_token={reservation.qr_token}"
+            )
+        )
+
+        messages.success(request, f"You have reserved locker {locker.locker_number}.")
+        return redirect("reservation_detail", reservation_id=reservation.id)
+
+    return render(request, "locker/reserve_form.html", {"locker": locker})
+
+
+@login_required(login_url='login')
+def reservation_detail(request, reservation_id):
+    reservation = get_object_or_404(
+        Reservation,
+        id=reservation_id,
+        user=request.user
+    )
+    return render(request, "locker/reservation_detail.html", {"reservation": reservation})
+
+
+@login_required(login_url='login')
+def reservation_qr(request, reservation_id):
+    reservation = get_object_or_404(
+        Reservation,
+        id=reservation_id,
+        user=request.user
     )
 
-    locker.status = 'occupied'
-    locker.save()
-
-    ReservationLog.objects.create(
-        user=request.user,
-        locker=locker,
-        action='reserve',
-        details=f"Reservation ID {reservation.id} created."
+    qr_data = (
+        f"locker_id={reservation.locker.id};"
+        f"locker_number={reservation.locker.locker_number};"
+        f"user={request.user.username};"
+        f"reservation_id={reservation.id};"
+        f"token={reservation.qr_token};"
+        f"start={reservation.start_time.isoformat()};"
+        f"end={reservation.end_time.isoformat()}"
     )
 
-    write_reservation_log(
-        user=request.user,
-        locker=locker,
-        action="reserve",
-        extra_message=f"reservation_id={reservation.id}"
-    )
+    qr = qrcode.make(qr_data)
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    buffer.seek(0)
 
-    messages.success(request, f"You have reserved locker {locker.locker_number}.")
-    return redirect("dashboard")
+    return HttpResponse(buffer.getvalue(), content_type="image/png")
 
 
 @login_required(login_url='login')

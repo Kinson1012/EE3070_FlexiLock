@@ -13,6 +13,7 @@ urlpatterns = [
     path('reservation/<int:reservation_id>/qr/', views.reservation_qr, name='reservation_qr'),
     path('cancel/<int:reservation_id>/', views.cancel_reservation, name='cancel_reservation'),
     path('campus-map/', views.campus_map, name='campus_map'),
+    path('api/verify-qr/', views.verify_qr, name='verify_qr'),
     path('timeline/', views.reservation_timeline, name='reservation_timeline'),
     path('timeline/events/', views.timeline_events, name='timeline_events'),
     path('admin-lockers/', views.admin_lockers, name='admin_lockers'),

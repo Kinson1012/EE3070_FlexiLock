@@ -1,7 +1,7 @@
 from pathlib import Path
 from io import BytesIO
 from datetime import timedelta
-
+import json
 import qrcode
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Locker, Reservation, ReservationLog
 
@@ -516,3 +517,28 @@ def disable_locker(request, locker_id):
 
     messages.success(request, f"{locker.locker_number} disabled.")
     return redirect("admin_lockers")
+
+@csrf_exempt
+def verify_qr(request):
+    if request.method == "GET":
+        token = request.GET.get("token", "")
+
+        if token == "ABC123":
+            return JsonResponse({"valid": True, "message": "QR verified"})
+        else:
+            return JsonResponse({"valid": False, "message": "Invalid token"})
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            token = data.get("token", "")
+
+            if token == "ABC123":
+                return JsonResponse({"valid": True, "message": "QR verified"})
+            else:
+                return JsonResponse({"valid": False, "message": "Invalid token"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "GET or POST required"}, status=405)

@@ -52,6 +52,8 @@ class ReservationLog(models.Model):
     ('maintenance', 'Maintenance'),
     ('reopen', 'Reopen'),
     ('disable', 'Disable'),
+    ('qr_verify', 'QR Verify'),
+    ('unlock_result', 'Unlock Result'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -64,3 +66,26 @@ class ReservationLog(models.Model):
         username = self.user.username if self.user else "Unknown User"
         locker_no = self.locker.locker_number if self.locker else "Unknown Locker"
         return f"{self.action.upper()} - {username} - {locker_no} - {self.timestamp:%Y-%m-%d %H:%M:%S}"
+    
+class LockerDeviceStatus(models.Model):
+    LOCK_STATE_CHOICES = [
+        ('locked', 'Locked'),
+        ('unlocked', 'Unlocked'),
+        ('unknown', 'Unknown'),
+    ]
+
+    DEVICE_STATE_CHOICES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
+        ('error', 'Error'),
+    ]
+
+    locker = models.OneToOneField(Locker, on_delete=models.CASCADE)
+    device_state = models.CharField(max_length=20, choices=DEVICE_STATE_CHOICES, default='offline')
+    lock_state = models.CharField(max_length=20, choices=LOCK_STATE_CHOICES, default='unknown')
+    last_seen = models.DateTimeField(auto_now=True)
+    last_action = models.CharField(max_length=100, blank=True)
+    message = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.locker.locker_number} - {self.device_state} / {self.lock_state}"

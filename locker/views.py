@@ -519,26 +519,387 @@ def disable_locker(request, locker_id):
     return redirect("admin_lockers")
 
 @csrf_exempt
-def verify_qr(request):
-    if request.method == "GET":
-        token = request.GET.get("token", "")
+def api_test_ping(request):
+    return JsonResponse({
+        "ok": True,
+        "message": "FlexiLock API is reachable"
+    })
 
-        if token == "ABC123":
-            return JsonResponse({"valid": True, "message": "QR verified"})
-        else:
-            return JsonResponse({"valid": False, "message": "Invalid token"})
 
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            token = data.get("token", "")
+@csrf_exempt
+def api_test_verify_qr(request):
+    """
+    Simple test endpoint for ESP32 debugging.
+    Accepts token ABC123 as valid.
+    """
+    if request.method != "POST":
+        return JsonResponse({
+            "valid": False,
+            "error": "POST method required"
+        }, status=405)
 
-            if token == "ABC123":
-                return JsonResponse({"valid": True, "message": "QR verified"})
-            else:
-                return JsonResponse({"valid": False, "message": "Invalid token"})
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        token = data.get("token", "").strip()
+    except Exception:
+        return JsonResponse({
+            "valid": False,
+            "error": "Invalid JSON"
+        }, status=400)
 
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+    if token == "ABC123":
+        return JsonResponse({
+            "valid": True,
+            "locker_number": "TEST-01",
+            "message": "Test token accepted"
+        })
 
-    return JsonResponse({"error": "GET or POST required"}, status=405)
+    return JsonResponse({
+        "valid": False,
+        "error": "Invalid test token"
+    }, status=401)
+
+
+@csrf_exempt
+def api_verify_qr(request):
+    """
+    Real QR verification endpoint.
+    Expects JSON:
+    {
+        "token": "uuid-token-here"
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({
+            "valid": False,
+            "error": "POST method required"
+        }, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        token = data.get("token", "").strip()
+    except Exception:
+        return JsonResponse({
+            "valid": False,
+            "error": "Invalid JSON"
+        }, status=400)
+
+    if not token:
+        return JsonResponse({
+            "valid": False,
+            "error": "Token is required"
+        }, status=400)
+
+    now = timezone.localtime()
+
+    reservation = Reservation.objects.filter(
+        qr_token=token,
+        active=True
+    ).select_related("locker", "user").first()
+
+    if not reservation:
+        return JsonResponse({
+            "valid": False,
+            "error": "Reservation not found"
+        }, status=404)
+
+    if reservation.locker.status in ["maintenance", "disabled"]:
+        return JsonResponse({
+            "valid": False,
+            "error": f"Locker is {reservation.locker.status}"
+        }, status=403)
+
+    if now < reservation.start_time:
+        return JsonResponse({
+            "valid": False,
+            "error": "Reservation has not started yet",
+            "start_time": timezone.localtime(reservation.start_time).isoformat(),
+            "end_time": timezone.localtime(reservation.end_time).isoformat(),
+            "locker_number": reservation.locker.locker_number
+        }, status=403)
+
+    if now > reservation.end_time:
+        reservation.active = False
+        reservation.save(update_fields=["active"])
+
+        return JsonResponse({
+            "valid": False,
+            "error": "Reservation expired",
+            "locker_number": reservation.locker.locker_number
+        }, status=403)
+
+    # Optional: log access verification
+    ReservationLog.objects.create(
+        user=reservation.user,
+        locker=reservation.locker,
+        action="reserve",
+        details=f"QR verified successfully for reservation {reservation.id}"
+    )
+
+    write_reservation_log(
+        user=reservation.user,
+        locker=reservation.locker,
+        action="qr_verify",
+        extra_message=f"reservation_id={reservation.id}"
+    )
+
+    return JsonResponse({
+        "valid": True,
+        "locker_number": reservation.locker.locker_number,
+        "location": reservation.locker.location,
+        "user": reservation.user.username,
+        "reservation_id": reservation.id,
+        "start_time": timezone.localtime(reservation.start_time).isoformat(),
+        "end_time": timezone.localtime(reservation.end_time).isoformat(),
+        "message": "QR verified"
+    })
+
+
+@csrf_exempt
+def api_lockers(request):
+    sync_locker_statuses()
+
+    lockers = Locker.objects.all().order_by("location", "locker_number")
+    data = []
+
+    for locker in lockers:
+        data.append({
+            "id": locker.id,
+            "locker_number": locker.locker_number,
+            "location": locker.location,
+            "status": locker.status,
+        })
+
+    return JsonResponse({"lockers": data})
+
+
+@csrf_exempt
+def api_locker_detail(request, locker_number):
+    sync_locker_statuses()
+
+    locker = get_object_or_404(Locker, locker_number=locker_number)
+
+    return JsonResponse({
+        "id": locker.id,
+        "locker_number": locker.locker_number,
+        "location": locker.location,
+        "status": locker.status,
+    })
+
+
+@csrf_exempt
+def api_locker_current(request, locker_number):
+    sync_locker_statuses()
+
+    locker = get_object_or_404(Locker, locker_number=locker_number)
+    now = timezone.localtime()
+
+    reservation = Reservation.objects.filter(
+        locker=locker,
+        active=True,
+        start_time__lte=now,
+        end_time__gte=now
+    ).select_related("user").first()
+
+    if not reservation:
+        return JsonResponse({
+            "has_active_reservation": False,
+            "locker_number": locker.locker_number,
+            "status": locker.status,
+        })
+
+    return JsonResponse({
+        "has_active_reservation": True,
+        "locker_number": locker.locker_number,
+        "status": locker.status,
+        "reservation_id": reservation.id,
+        "user": reservation.user.username,
+        "start_time": timezone.localtime(reservation.start_time).isoformat(),
+        "end_time": timezone.localtime(reservation.end_time).isoformat(),
+        "qr_token": str(reservation.qr_token),
+    })
+
+
+@csrf_exempt
+def api_reservation_detail(request, reservation_id):
+    reservation = get_object_or_404(
+        Reservation.objects.select_related("locker", "user"),
+        id=reservation_id
+    )
+
+    now = timezone.localtime()
+
+    if reservation.active and reservation.start_time <= now <= reservation.end_time:
+        state = "current"
+    elif reservation.active and reservation.start_time > now:
+        state = "upcoming"
+    else:
+        state = "closed"
+
+    return JsonResponse({
+        "id": reservation.id,
+        "user": reservation.user.username,
+        "locker_number": reservation.locker.locker_number,
+        "location": reservation.locker.location,
+        "start_time": timezone.localtime(reservation.start_time).isoformat(),
+        "end_time": timezone.localtime(reservation.end_time).isoformat(),
+        "active": reservation.active,
+        "state": state,
+        "qr_token": str(reservation.qr_token),
+    })
+
+
+@login_required(login_url="login")
+def api_my_active_reservation(request):
+    now = timezone.localtime()
+
+    reservation = Reservation.objects.filter(
+        user=request.user,
+        active=True,
+        start_time__lte=now,
+        end_time__gte=now
+    ).select_related("locker").first()
+
+    if not reservation:
+        return JsonResponse({
+            "has_active_reservation": False
+        })
+
+    return JsonResponse({
+        "has_active_reservation": True,
+        "reservation_id": reservation.id,
+        "locker_number": reservation.locker.locker_number,
+        "location": reservation.locker.location,
+        "start_time": timezone.localtime(reservation.start_time).isoformat(),
+        "end_time": timezone.localtime(reservation.end_time).isoformat(),
+        "qr_token": str(reservation.qr_token),
+    })
+
+
+@csrf_exempt
+def api_locker_status(request):
+    """
+    ESP32 reports current locker/device state.
+    Example JSON:
+    {
+        "locker_number": "LAU-01",
+        "device_state": "online",
+        "lock_state": "locked",
+        "last_action": "boot",
+        "message": "ESP32 online"
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+    locker_number = data.get("locker_number", "").strip()
+    device_state = data.get("device_state", "online").strip()
+    lock_state = data.get("lock_state", "unknown").strip()
+    last_action = data.get("last_action", "").strip()
+    message = data.get("message", "").strip()
+
+    if not locker_number:
+        return JsonResponse({"ok": False, "error": "locker_number is required"}, status=400)
+
+    locker = get_object_or_404(Locker, locker_number=locker_number)
+
+    status_obj, _ = LockerDeviceStatus.objects.get_or_create(locker=locker)
+    status_obj.device_state = device_state
+    status_obj.lock_state = lock_state
+    status_obj.last_action = last_action
+    status_obj.message = message
+    status_obj.save()
+
+    write_reservation_log(
+        user=None,
+        locker=locker,
+        action="device_status",
+        extra_message=f"device_state={device_state} lock_state={lock_state} action={last_action}"
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "locker_number": locker.locker_number,
+        "device_state": status_obj.device_state,
+        "lock_state": status_obj.lock_state,
+        "last_seen": timezone.localtime(status_obj.last_seen).isoformat(),
+    })
+
+
+@csrf_exempt
+def api_unlock_result(request):
+    """
+    ESP32 reports unlock attempt result.
+    Example JSON:
+    {
+        "locker_number": "LAU-01",
+        "token": "uuid-token",
+        "result": "success",
+        "message": "relay opened"
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+    locker_number = data.get("locker_number", "").strip()
+    token = data.get("token", "").strip()
+    result = data.get("result", "").strip()
+    message = data.get("message", "").strip()
+
+    if not locker_number or not token or not result:
+        return JsonResponse({
+            "ok": False,
+            "error": "locker_number, token, and result are required"
+        }, status=400)
+
+    locker = get_object_or_404(Locker, locker_number=locker_number)
+
+    reservation = Reservation.objects.filter(
+        locker=locker,
+        qr_token=token
+    ).select_related("user").first()
+
+    if reservation:
+        ReservationLog.objects.create(
+            user=reservation.user,
+            locker=locker,
+            action="unlock_result",
+            details=f"Unlock result={result}. {message}"
+        )
+
+        write_reservation_log(
+            user=reservation.user,
+            locker=locker,
+            action="unlock_result",
+            extra_message=f"result={result} message={message}"
+        )
+    else:
+        write_reservation_log(
+            user=None,
+            locker=locker,
+            action="unlock_result",
+            extra_message=f"reservation_not_found result={result} message={message}"
+        )
+
+    status_obj, _ = LockerDeviceStatus.objects.get_or_create(locker=locker)
+    status_obj.device_state = "online"
+    status_obj.lock_state = "unlocked" if result == "success" else status_obj.lock_state
+    status_obj.last_action = "unlock_result"
+    status_obj.message = message
+    status_obj.save()
+
+    return JsonResponse({
+        "ok": True,
+        "locker_number": locker.locker_number,
+        "result": result,
+    })

@@ -1,8 +1,10 @@
 import uuid
-
+import random
 from django.db import models
 from django.contrib.auth.models import User
 
+def generate_pin():
+    return f"{random.randint(0, 999999):06d}"
 
 class Locker(models.Model):
     STATUS_CHOICES = [
@@ -27,6 +29,7 @@ class Reservation(models.Model):
     end_time = models.DateTimeField()
     active = models.BooleanField(default=True)
     qr_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    pin_code = models.CharField(max_length=6, default=generate_pin)
 
     def __str__(self):
         state = "Active" if self.active else "Closed"
@@ -54,6 +57,7 @@ class ReservationLog(models.Model):
     ('disable', 'Disable'),
     ('qr_verify', 'QR Verify'),
     ('unlock_result', 'Unlock Result'),
+    ('pin_verify', 'PIN Verify'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

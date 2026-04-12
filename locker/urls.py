@@ -31,4 +31,5 @@ urlpatterns = [
     path("api/my-active-reservation/", views.api_my_active_reservation, name="api_my_active_reservation"),
     path("api/locker-status/", views.api_locker_status, name="api_locker_status"),
     path("api/unlock-result/", views.api_unlock_result, name="api_unlock_result"),
+    path("api/verify-pin/", views.api_verify_pin, name="api_verify_pin"),
 ]

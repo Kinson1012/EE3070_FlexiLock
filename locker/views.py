@@ -17,8 +17,7 @@ from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Locker, Reservation, ReservationLog
-
+from .models import Locker, Reservation, ReservationLog, LockerDeviceStatus
 
 def write_reservation_log(user, locker, action, extra_message=""):
     """
@@ -902,4 +901,93 @@ def api_unlock_result(request):
         "ok": True,
         "locker_number": locker.locker_number,
         "result": result,
+    })
+    
+@csrf_exempt
+def api_verify_pin(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "valid": False,
+            "error": "POST method required"
+        }, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        locker_number = data.get("locker_number", "").strip()
+        pin_code = data.get("pin_code", "").strip()
+    except Exception:
+        return JsonResponse({
+            "valid": False,
+            "error": "Invalid JSON"
+        }, status=400)
+
+    if not locker_number or not pin_code:
+        return JsonResponse({
+            "valid": False,
+            "error": "locker_number and pin_code are required"
+        }, status=400)
+
+    now = timezone.localtime()
+
+    locker = Locker.objects.filter(locker_number=locker_number).first()
+    if not locker:
+        return JsonResponse({
+            "valid": False,
+            "error": "Locker not found"
+        }, status=404)
+
+    if locker.status in ["maintenance", "disabled"]:
+        return JsonResponse({
+            "valid": False,
+            "error": f"Locker is {locker.status}"
+        }, status=403)
+
+    reservation = Reservation.objects.filter(
+        locker=locker,
+        pin_code=pin_code,
+        active=True
+    ).select_related("user").first()
+
+    if not reservation:
+        return JsonResponse({
+            "valid": False,
+            "error": "Invalid PIN"
+        }, status=401)
+
+    if now < reservation.start_time:
+        return JsonResponse({
+            "valid": False,
+            "error": "Reservation has not started yet"
+        }, status=403)
+
+    if now > reservation.end_time:
+        reservation.active = False
+        reservation.save(update_fields=["active"])
+
+        return JsonResponse({
+            "valid": False,
+            "error": "Reservation expired"
+        }, status=403)
+
+    ReservationLog.objects.create(
+        user=reservation.user,
+        locker=locker,
+        action="pin_verify",
+        details=f"PIN verified successfully for reservation {reservation.id}"
+    )
+
+    write_reservation_log(
+        user=reservation.user,
+        locker=locker,
+        action="pin_verify",
+        extra_message=f"reservation_id={reservation.id}"
+    )
+
+    return JsonResponse({
+        "valid": True,
+        "locker_number": locker.locker_number,
+        "location": locker.location,
+        "user": reservation.user.username,
+        "reservation_id": reservation.id,
+        "message": "PIN verified"
     })

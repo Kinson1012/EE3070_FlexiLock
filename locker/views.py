@@ -281,15 +281,7 @@ def reservation_qr(request, reservation_id):
         user=request.user
     )
 
-    qr_data = (
-        f"locker_id={reservation.locker.id};"
-        f"locker_number={reservation.locker.locker_number};"
-        f"user={request.user.username};"
-        f"reservation_id={reservation.id};"
-        f"token={reservation.qr_token};"
-        f"start={reservation.start_time.isoformat()};"
-        f"end={reservation.end_time.isoformat()}"
-    )
+    qr_data = reservation.access_token if reservation.access_token else str(reservation.qr_token)
 
     qr = qrcode.make(qr_data)
     buffer = BytesIO()
@@ -428,7 +420,7 @@ def timeline_events(request):
                 "locker": reservation.locker.locker_number,
                 "location": reservation.locker.location,
                 "user": reservation.user.username,
-                "qr_token": str(reservation.qr_token),
+                "access_token": reservation.access_token if reservation.access_token else str(reservation.qr_token),
             }
         })
 
@@ -592,10 +584,10 @@ def api_verify_qr(request):
     now = timezone.localtime()
 
     reservation = Reservation.objects.filter(
-        qr_token=token,
+        Q(access_token=token) | Q(qr_token=token),
         active=True
     ).select_related("locker", "user").first()
-
+    
     if not reservation:
         return JsonResponse({
             "valid": False,
@@ -715,7 +707,7 @@ def api_locker_current(request, locker_number):
         "user": reservation.user.username,
         "start_time": timezone.localtime(reservation.start_time).isoformat(),
         "end_time": timezone.localtime(reservation.end_time).isoformat(),
-        "qr_token": str(reservation.qr_token),
+        "access_token": reservation.access_token if reservation.access_token else str(reservation.qr_token),
     })
 
 
@@ -744,7 +736,7 @@ def api_reservation_detail(request, reservation_id):
         "end_time": timezone.localtime(reservation.end_time).isoformat(),
         "active": reservation.active,
         "state": state,
-        "qr_token": str(reservation.qr_token),
+        "access_token": reservation.access_token if reservation.access_token else str(reservation.qr_token),
     })
 
 
@@ -771,7 +763,7 @@ def api_my_active_reservation(request):
         "location": reservation.locker.location,
         "start_time": timezone.localtime(reservation.start_time).isoformat(),
         "end_time": timezone.localtime(reservation.end_time).isoformat(),
-        "qr_token": str(reservation.qr_token),
+        "access_token": reservation.access_token if reservation.access_token else str(reservation.qr_token),
     })
 
 
@@ -864,8 +856,9 @@ def api_unlock_result(request):
     locker = get_object_or_404(Locker, locker_number=locker_number)
 
     reservation = Reservation.objects.filter(
-        locker=locker,
-        qr_token=token
+        locker=locker
+    ).filter(
+        Q(access_token=token) | Q(qr_token=token)
     ).select_related("user").first()
 
     if reservation:

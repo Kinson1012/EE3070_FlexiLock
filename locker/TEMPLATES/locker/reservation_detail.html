@@ -157,9 +157,9 @@
           </button>
         </div>
         <div class="meta">
-          <strong>QR Token:</strong><br /><span class="token"
-            >{{ reservation.qr_token }}</span
-          >
+          <strong>QR Token:</strong><br /><span class="token">
+            {{ reservation.access_token|default:reservation.qr_token }}
+          </span>
         </div>
 
         <div class="qr-box">

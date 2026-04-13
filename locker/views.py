@@ -240,7 +240,7 @@ def reserve_locker(request, locker_id):
         ReservationLog.objects.create(
             user=request.user,
             locker=locker,
-            action="reserve",
+            action="qr_verify",
             details=(
                 f"Reservation ID {reservation.id} created. "
                 f"Start: {start_time}, End: {end_time}, QR Token: {reservation.qr_token}"
@@ -250,7 +250,7 @@ def reserve_locker(request, locker_id):
         write_reservation_log(
             user=request.user,
             locker=locker,
-            action="reserve",
+            action="qr_verify",
             extra_message=(
                 f"reservation_id={reservation.id} "
                 f"start={start_time} end={end_time} qr_token={reservation.qr_token}"
@@ -471,7 +471,7 @@ def reopen_locker(request, locker_id):
     ReservationLog.objects.create(
         user=request.user,
         locker=locker,
-        action="reserve",
+        action="qr_verify",
         details=f"Admin reopened locker {locker.locker_number}."
     )
 
@@ -557,7 +557,7 @@ def api_verify_qr(request):
     Real QR verification endpoint.
     Expects JSON:
     {
-        "token": "uuid-token-here"
+        "token": "SHORTTOKEN12"
     }
     """
     if request.method != "POST":
@@ -568,7 +568,7 @@ def api_verify_qr(request):
 
     try:
         data = json.loads(request.body.decode("utf-8"))
-        token = data.get("token", "").strip()
+        token = data.get("token", "").strip().upper()
     except Exception:
         return JsonResponse({
             "valid": False,
@@ -584,10 +584,10 @@ def api_verify_qr(request):
     now = timezone.localtime()
 
     reservation = Reservation.objects.filter(
-        Q(access_token=token) | Q(qr_token=token),
+        access_token=token,
         active=True
     ).select_related("locker", "user").first()
-    
+
     if not reservation:
         return JsonResponse({
             "valid": False,
@@ -612,18 +612,16 @@ def api_verify_qr(request):
     if now > reservation.end_time:
         reservation.active = False
         reservation.save(update_fields=["active"])
-
         return JsonResponse({
             "valid": False,
             "error": "Reservation expired",
             "locker_number": reservation.locker.locker_number
         }, status=403)
 
-    # Optional: log access verification
     ReservationLog.objects.create(
         user=reservation.user,
         locker=reservation.locker,
-        action="reserve",
+        action="qr_verify",
         details=f"QR verified successfully for reservation {reservation.id}"
     )
 
@@ -631,7 +629,7 @@ def api_verify_qr(request):
         user=reservation.user,
         locker=reservation.locker,
         action="qr_verify",
-        extra_message=f"reservation_id={reservation.id}"
+        extra_message=f"reservation_id={reservation.id} access_token={reservation.access_token}"
     )
 
     return JsonResponse({
@@ -639,10 +637,7 @@ def api_verify_qr(request):
         "locker_number": reservation.locker.locker_number,
         "location": reservation.locker.location,
         "user": reservation.user.username,
-        "reservation_id": reservation.id,
-        "start_time": timezone.localtime(reservation.start_time).isoformat(),
-        "end_time": timezone.localtime(reservation.end_time).isoformat(),
-        "message": "QR verified"
+        "reservation_id": reservation.id
     })
 
 

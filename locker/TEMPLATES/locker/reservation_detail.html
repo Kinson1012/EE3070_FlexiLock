@@ -1,113 +1,203 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reservation Confirmed | FlexiLock</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(53,92,255,0.16), transparent 28%),
-                radial-gradient(circle at top right, rgba(57,196,172,0.12), transparent 22%),
-                linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
-            margin: 0;
-            color: #162033;
+      body {
+        font-family: "Inter", sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(53, 92, 255, 0.16),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(57, 196, 172, 0.12),
+            transparent 22%
+          ),
+          linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+        margin: 0;
+        color: #162033;
+      }
+
+      .container {
+        max-width: 780px;
+        margin: 60px auto;
+        padding: 0 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 32px;
+        border-radius: 24px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        margin-bottom: 18px;
+      }
+
+      .meta {
+        color: #5f6b85;
+        margin-bottom: 10px;
+      }
+
+      .qr-box {
+        margin: 26px 0;
+        display: inline-block;
+        padding: 16px;
+        background: #fff;
+        border: 1px solid #e6ebf5;
+        border-radius: 18px;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        background: #355cff;
+        color: white;
+      }
+
+      .btn-outline {
+        background: white;
+        color: #162033;
+        border: 1px solid #d9dfeb;
+      }
+
+      .token {
+        font-family: monospace;
+        background: #f4f7ff;
+        padding: 6px 10px;
+        border-radius: 10px;
+        display: inline-block;
+        margin-top: 4px;
+
+        .pin-box {
+          margin-top: 20px;
+          padding: 16px;
+          border-radius: 12px;
+          background: #f5f7ff;
+          text-align: center;
         }
 
-        .container {
-            max-width: 780px;
-            margin: 60px auto;
-            padding: 0 20px;
+        .pin-title {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 6px;
         }
 
-        .card {
-            background: white;
-            padding: 32px;
-            border-radius: 24px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        .pin-display {
+          font-size: 28px;
+          letter-spacing: 6px;
+          font-weight: 600;
+          margin-bottom: 10px;
         }
 
-        h1 {
-            margin-top: 0;
-            margin-bottom: 18px;
+        .pin-btn {
+          background: #162033;
+          color: white;
+          border: none;
+          padding: 8px 14px;
+          border-radius: 8px;
+          cursor: pointer;
         }
-
-        .meta {
-            color: #5f6b85;
-            margin-bottom: 10px;
-        }
-
-        .qr-box {
-            margin: 26px 0;
-            display: inline-block;
-            padding: 16px;
-            background: #fff;
-            border: 1px solid #e6ebf5;
-            border-radius: 18px;
-        }
-
-        .btn-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 24px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 18px;
-            border-radius: 999px;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: #355cff;
-            color: white;
-        }
-
-        .btn-outline {
-            background: white;
-            color: #162033;
-            border: 1px solid #d9dfeb;
-        }
-
-        .token {
-            font-family: monospace;
-            background: #f4f7ff;
-            padding: 6px 10px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 4px;
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="card">
-            <h1>Reservation Confirmed</h1>
+      <div class="card">
+        <h1>Reservation Confirmed</h1>
 
-            <div class="meta"><strong>Locker:</strong> {{ reservation.locker.locker_number }}</div>
-            <div class="meta"><strong>Location:</strong> {{ reservation.locker.location }}</div>
-            <div class="meta"><strong>Start:</strong> {{ reservation.start_time|date:"Y-m-d H:i" }}</div>
-            <div class="meta"><strong>End:</strong> {{ reservation.end_time|date:"Y-m-d H:i" }}</div>
-            <div class="meta"><strong>QR Token:</strong><br><span class="token">{{ reservation.qr_token }}</span></div>
-
-            <div class="qr-box">
-                <img src="{% url 'reservation_qr' reservation.id %}" alt="Reservation QR Code">
-            </div>
-
-            <p>Use this QR code to unlock the locker when you arrive.</p>
-
-            <div class="btn-row">
-                <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
-                <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-outline">Cancel Reservation</a>
-            </div>
+        <div class="meta">
+          <strong>Locker:</strong> {{ reservation.locker.locker_number }}
         </div>
+        <div class="meta">
+          <strong>Location:</strong> {{ reservation.locker.location }}
+        </div>
+        <div class="meta">
+          <strong>Start:</strong> {{ reservation.start_time|date:"Y-m-d H:i" }}
+        </div>
+        <div class="meta">
+          <strong>End:</strong> {{ reservation.end_time|date:"Y-m-d H:i" }}
+        </div>
+        <div class="pin-box">
+          <div class="pin-title">Locker PIN</div>
+
+          <div class="pin-display" id="pin-value">• • • • • •</div>
+
+          <button
+            class="pin-btn"
+            onclick="togglePin('{{ reservation.pin_code }}')"
+          >
+            Show PIN
+          </button>
+        </div>
+        <div class="meta">
+          <strong>QR Token:</strong><br /><span class="token">
+            {{ reservation.access_token|default:reservation.qr_token }}
+          </span>
+        </div>
+
+        <div class="qr-box">
+          <img
+            src="{% url 'reservation_qr' reservation.id %}"
+            alt="Reservation QR Code"
+          />
+        </div>
+
+        <p>Use this QR code to unlock the locker when you arrive.</p>
+
+        <div class="btn-row">
+          <a href="{% url 'dashboard' %}" class="btn btn-primary"
+            >Back to Dashboard</a
+          >
+          <a
+            href="{% url 'cancel_reservation' reservation.id %}"
+            class="btn btn-outline"
+            >Cancel Reservation</a
+          >
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
+
+<script>
+  let pinVisible = false;
+
+  function togglePin(pin) {
+    const el = document.getElementById("pin-value");
+
+    if (!pinVisible) {
+      el.textContent = pin;
+      pinVisible = true;
+    } else {
+      el.textContent = "• • • • • •";
+      pinVisible = false;
+    }
+  }
+</script>

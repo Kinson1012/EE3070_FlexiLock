@@ -1,8 +1,17 @@
 import uuid
-
+import random
 from django.db import models
 from django.contrib.auth.models import User
+import secrets
+import string
 
+
+def generate_access_token(length=12):
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+def generate_pin():
+    return f"{random.randint(0, 999999):06d}"
 
 class Locker(models.Model):
     STATUS_CHOICES = [
@@ -27,6 +36,24 @@ class Reservation(models.Model):
     end_time = models.DateTimeField()
     active = models.BooleanField(default=True)
     qr_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    pin_code = models.CharField(max_length=6, default=generate_pin)
+    
+    access_token = models.CharField(
+    max_length=12,
+    unique=True,
+    null=True,
+    blank=True,
+    editable=False
+    )
+    
+    def save(self, *args, **kwargs):
+        if not self.access_token:
+            while True:
+                token = generate_access_token(12)
+                if not Reservation.objects.filter(access_token=token).exists():
+                    self.access_token = token
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         state = "Active" if self.active else "Closed"
@@ -52,6 +79,9 @@ class ReservationLog(models.Model):
     ('maintenance', 'Maintenance'),
     ('reopen', 'Reopen'),
     ('disable', 'Disable'),
+    ('qr_verify', 'QR Verify'),
+    ('unlock_result', 'Unlock Result'),
+    ('pin_verify', 'PIN Verify'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -64,3 +94,26 @@ class ReservationLog(models.Model):
         username = self.user.username if self.user else "Unknown User"
         locker_no = self.locker.locker_number if self.locker else "Unknown Locker"
         return f"{self.action.upper()} - {username} - {locker_no} - {self.timestamp:%Y-%m-%d %H:%M:%S}"
+    
+class LockerDeviceStatus(models.Model):
+    LOCK_STATE_CHOICES = [
+        ('locked', 'Locked'),
+        ('unlocked', 'Unlocked'),
+        ('unknown', 'Unknown'),
+    ]
+
+    DEVICE_STATE_CHOICES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
+        ('error', 'Error'),
+    ]
+
+    locker = models.OneToOneField(Locker, on_delete=models.CASCADE)
+    device_state = models.CharField(max_length=20, choices=DEVICE_STATE_CHOICES, default='offline')
+    lock_state = models.CharField(max_length=20, choices=LOCK_STATE_CHOICES, default='unknown')
+    last_seen = models.DateTimeField(auto_now=True)
+    last_action = models.CharField(max_length=100, blank=True)
+    message = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.locker.locker_number} - {self.device_state} / {self.lock_state}"
